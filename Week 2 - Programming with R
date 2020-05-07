@@ -1,0 +1,116 @@
+Control Structures Control the flow of execution of the program (depending on runtime conditions)
+  Common Structures:
+    if, else: test a condition
+    for: execute a loop a fixed # of times
+    while: execute a loop while a condition is true
+    repeat: execute an infinite loop
+    break: break the execution of a loop
+    next: skip an iteration of a loop
+    return: exit a function
+
+  if:
+    if(<condition>) {
+            #do something
+    } else if(<condition2>) {
+            #do something different (can do any # of these)
+    } else {
+            #do something else
+    }
+
+    if(x > 3) {
+            y <- 10
+    } else {
+            y <- 0
+    }
+
+    y <- if(x > 3) {
+            10
+    } else {
+            0
+    }
+
+  for:
+    for(i in 1:4) {
+            print(x[i])
+    }
+
+    for(i in seq_along(x)) {
+            print(x[i])
+    }
+
+    for(letter in x) {
+            print(letter)
+    }
+
+    for(i in 1:4) print(x[i])
+
+    for(i in seq_len(nrow(x))) {
+            for(j in seq_len(ncol(x))) {
+            print(x[i, j])
+            }
+    }
+
+    Going past 3 or 4 loops gets confusing, might want to use functions instead
+
+  While:
+    Be careful, these loops can be infinite if not careful
+
+    count <- 0
+    while(count < 10) {
+            print(count)
+            count <- count + 1
+    }
+
+    z <- 5
+    while(z >= 3 && z <= 10) {
+            print(z)
+            coin <- rbinom(1, 1, 0.5)
+
+            if(coin == 1) { #random walk
+                    z <- z + 1
+            } else {
+                    z <- z - 1
+            }
+    }
+
+  Repeat:
+    Have to call break at some point
+    Probably better to use a for loop
+
+    Ex. Gradient Descent:
+    x0 <- 1
+    tol <- 1e-8 #tolerance
+
+    repeat {
+            x1 <- computeEstimateofx()
+
+            if(abs(x1 - x0) <tol) {
+                    breaks
+            } else {
+                    x0 <- x1
+            }
+    }
+
+  Next:
+    Used to skip an iteration of a loop
+
+    if(i in 1:100) {
+            if(i <= 20) {
+                    #skip the first 20 iterations
+                    next
+            }
+            #do something here
+    }
+
+  Return:
+    similar but exits a function and usually returns something
+
+  Summary:
+    if, while and for control the flow
+    infinite loops should be avoided
+    mostly use these in programs, use *apply functions instead in command-line
+
+Functions:
+  f <- function(<arguments>) {
+          #Do something interesting
+  }

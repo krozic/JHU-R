@@ -1,0 +1,248 @@
+---
+title: "Week 3 - Loop Functions and Debugging"
+output:
+  html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
+### Loop Functions
+- `lapply`: Loop over a list and evaluate a function on each element
+- `sapply`: Same as lapply but try to simplify the result
+- `apply`: Apply a function over the margins of an array
+- `tapply`: Apply a function over subsets of a vector (table)
+- `mapply`: Multivariate version of `lapply`
+  
+#### lapply
+- Takes in 3 arguments:
+  1. a list `x`
+  2. a function `FUN`
+  3. other arguments via `...` 
+- If `X` is not a list, it will be coerced to alist using as.list.
+- Always returns a list, regardless of the class of the input.
+- The actual looping is done in C code
+  
+```{r}
+function (X, FUN, ...) {
+        FUN <- match.fun(FUN)
+        if(!is.vector(X) || is.object(X))
+            X <- as.list(X)
+        .Internal(lapply(X, FUN))
+}
+<bytecode: 0x7ff7a1951c00>
+<environment: namespace:base>
+```
+
+```{r}
+x <- list(a = 1:5, b = rnorm(10))
+lapply(x, mean)
+$a
+[1] 3
+
+$b
+[1] 0.0296824
+```
+
+```{r}
+x <- list(a = 1:4, b = rnorm(10), c = rnorm(20, 1), d = rnorm(100, 5))
+lapply(x, mean)
+$a
+[1] 2.5
+
+$b
+[1] 0.06082667
+
+$c
+[1] 1.467083
+
+$d
+[1] 5.074749
+```
+
+```{r}
+x <- 1:4
+lapply(x, runif) #x amount of uniform distribution values, between 0 and 1
+[[1]]
+[1] 0.2675082
+
+[[2]]
+[1] 0.2186453 0.5167968
+
+[[3]]
+[1] 0.2689506 0.1811683 0.5185761
+
+[[4]]
+[1] 0.5627829 0.1291569 0.2563676 0.7179353
+```
+
+
+```{r}
+x <- 1:4
+lapply(x, runif, min = 0, max = 10) #x amount of uniform distribution values, between 0 and 10
+[[1]]
+[1] 7.108169
+
+[[2]]
+[1] 7.10346 4.74639
+
+[[3]]
+[1] 9.688282 5.138259 9.005831
+
+[[4]]
+[1] 5.9789127 9.6521355 2.5745983 0.8854886
+```
+
+```{r}
+x <- list(a = matrix(1:4, 2, 2), b = matrix(1:6, 3, 2))
+x
+$a
+     [,1] [,2]
+[1,]    1    3
+[2,]    2    4
+
+$b
+     [,1] [,2]
+[1,]    1    4
+[2,]    2    5
+[3,]    3    6
+
+lapply(x, function(elt) elt[,1]) 
+$a
+[1] 1 2
+
+$b
+[1] 1 2 3
+
+#This function only exists in lapply to pull the first column of each matrix
+```
+
+#### sapply
+- If the result is a list where every element is length 1, then a vector is returned.
+- If the result is a list where every element is avector of the same length (>1), a matrix is returned.
+- If it can't figure things out, a list is returned.  
+
+Remember:
+
+```{r}
+x <- list(a = 1:4, b = rnorm(10), c = rnorm(20, 1), d = rnorm(100, 5))
+lapply(x, mean)
+$a
+[1] 2.5
+
+$b
+[1] 0.06082667
+
+$c
+[1] 1.467083
+
+$d
+[1] 5.074749
+```
+  
+Alternatively:
+
+```{r}
+sapply(x, mean)
+        a         b         c         d 
+2.5000000 0.2139836 0.4600913 4.9709709 
+
+mean(x)
+[1] NA
+```
+  
+#### apply
+- Most often used to apply a function to the rows or columns of a matrix
+- Can be used with general arrays (e.g. taking the average of an array of matrices)
+- Not really faster than writing a loop, but it works in a line!
+
+```{r}
+str(aapply(function (X, MARGIN, FUN, ...)
+```
+- `X` is an array
+- `MARGIN` is an integer vector indicating which margins should be "retained".
+- `FUN` is a function to be applied
+- `...` is for other arguments to be passed to `FUN`
+
+```{r}
+x <- matrix(rnorm(200), 20, 10)
+apply(x, 2 ,mean) #presrve all the columns(2) collapses the rows
+ [1] -0.28626874  0.19856511 -0.31688305 -0.02731786  0.02768524
+ [6] -0.02500611  0.18800750  0.05201392  0.37343831 -0.19715015
+
+apply(x, 1, sum) #preserve all the rows(1), collapse all the columns
+ [1] -4.7336987  0.4856736  3.0622113  3.1236871 -4.9419170 -1.5839072
+ [7]  0.4928710 -5.1211304 -1.3053737 -5.1036233  0.9341416 -0.8665630
+[13]  2.3178583 -0.6342967  5.5691680  0.5782443  2.9294297  2.2108695
+[19] -0.4902686  2.8183079
+```
+
+```{r}
+rowSums = apply(x, 1, sum)
+rowMeans = apply(x, 1, mean)
+colSums = apply(x, 2, sum)
+colMeans = apply(x, 2, mean)
+```
+
+- These shortcuts are much faster
+
+```{r}
+x <- matrix(rnorm(200), 20, 10)
+apply(x, 1, quantile, probs = c(0.25, 0.75))
+ [,1]       [,2]        [,3]        [,4]       [,5]
+25% -0.5809978 -0.8237116 -0.62387762 -0.68944995 -0.5281022
+75%  0.5865756  0.3815251  0.08641744  0.09694716  0.2109390
+          [,6]       [,7]       [,8]        [,9]      [,10]      [,11]
+25% -0.8184700 -0.3546380 -0.2197593 -0.55889314 -1.0146341 -0.2654860
+75%  0.5549174  0.3347432  1.0386384 -0.05015169  0.5391982  0.8761715
+         [,12]      [,13]        [,14]      [,15]        [,16]
+25% -0.6949905 -0.4205925 -0.009323959 -0.5887117 -0.968603750
+75%  0.9399615  0.0426014  0.399888547  0.7000215 -0.009519585
+         [,17]      [,18]       [,19]     [,20]
+25% -0.5613768 -1.0133901 -1.25971679 -0.917481
+75%  0.9533017  0.1325692  0.00429806  1.342292
+```
+
+```{r}
+a <- array(rnorm(2 * 2 * 10), c(2, 2, 10))
+apply(a, c(1, 2), mean)
+          [,1]       [,2]
+[1,] 0.1473825 -0.2412296
+[2,] 0.4247021 -0.2485657
+
+rowMeans(a, dims = 2) #collapse to 2-dimensions
+          [,1]       [,2]
+[1,] 0.1473825 -0.2412296
+[2,] 0.4247021 -0.2485657
+```
+
+
+#### mapply
+- A multivariate apply which applies a function in parallel over a set of arguments.
+```{r}
+str(mapply)
+function (FUN, ..., MoreArgs = NULL, SIMPLIFY = TRUE, USE.NAMES = TRUE)
+```
+- `FUN` is a function to apply
+- `...` contains arguments to apply over
+- `MoreArgs` is a list of other arguments to `FUN`.
+- `SIMPLIFY` indicates whether the results should be simplified
+
+```{r}
+list(rep(1, 4), rep(2, 3), rep(3, 2), rep(4, 1))
+
+vs.
+
+mapply(rep, 1:4, 4:1)
+[[1]]
+[1] 1 1 1 1
+
+[[2]]
+[1] 2 2 2
+
+[[3]]
+[1] 3 3
+
+[[4]]
+[1] 4
+```

@@ -1,0 +1,582 @@
+---
+title: "Week 2 - Programming with R"
+output:
+  html_document:
+    df_print: paged
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
+1. Everything that exists is an Object
+2. Everything that happens is a function call  
+  
+Control Structures Control the flow of execution of the program (depending on runtime conditions)
+
+Common Structures:
+
+- if, else: test a condition
+- for: execute a loop a fixed # of times
+- while: execute a loop while a condition is true
+- repeat: execute an infinite loop
+- break: break the execution of a loop
+- next: skip an iteration of a loop
+- return: exit a function
+
+### if
+
+```{r}
+if(condition) {
+        #do something
+} else if(condition2) {
+        #do something different (can do any # of these)
+} else {
+        #do something else
+}
+```{r}    
+if(x > 3) {
+        y <- 10
+} else {
+        y <- 0
+}
+```
+```{r}
+y <- if(x > 3) {
+        10
+} else {
+        0
+}
+```
+
+### for
+
+```{r}
+for(i in 1:4) {
+        print(x[i])
+}
+```
+````{r}
+for(i in seq_along(x)) {
+        print(x[i])
+}
+```
+```{r}
+for(letter in x) {
+        print(letter)
+}
+```
+```{r}
+for(i in 1:4) print(x[i])
+```
+```{r}
+for(i in seq_len(nrow(x))) {
+        for(j in seq_len(ncol(x))) {
+        print(x[i, j])
+        }
+}
+```
+
+- Going past 3 or 4 loops gets confusing, might want to use functions instead
+
+### While
+- Be careful, these loops can be infinite if not careful
+
+```{r}
+count <- 0
+while(count < 10) {
+        print(count)
+        count <- count + 1
+}
+```
+```{r}
+z <- 5
+while(z >= 3 && z <= 10) {
+        print(z)
+        coin <- rbinom(1, 1, 0.5)
+
+        if(coin == 1) { #random walk
+                z <- z + 1
+        } else {
+                z <- z - 1
+        }
+}
+```
+
+### Repeat
+- Have to call break at some point
+- Probably better to use a for loop
+
+```{r}
+Ex. Gradient Descent:
+x0 <- 1
+tol <- 1e-8 #tolerance
+
+repeat {
+        x1 <- computeEstimateofx()
+
+        if(abs(x1 - x0) <tol) {
+                breaks
+        } else {
+                x0 <- x1
+        }
+}
+```
+
+### Next
+- Used to skip an iteration of a loop
+
+```{r}
+if(i in 1:100) {
+        if(i <= 20) {
+                #skip the first 20 iterations
+                next
+        }
+        #do something here
+}
+```
+
+### Return
+- similar but exits a function and usually returns something
+
+### Summary
+- if, while and for control the flow
+- infinite loops should be avoided
+- mostly use these in programs, use *apply functions instead in command-line
+
+### Functions
+
+Exs.
+```{r}
+add2 <- function(x, y) {
+        x + y
+}
+```
+```{r}
+above10 <- function(x) {
+        use <- x > 10 #creates a logical vector
+        x[use]
+}
+```
+```{r}
+above <- function(x, n = 10) { #default n is 10
+        use <- x > n
+        x[use]
+}
+```
+```{r}
+columnmean <- function(y, removeNA = TRUE) {
+        nc <- ncol(y)
+        means <- numeric(nc) #empty vector
+        for(i in 1:nc) {
+                means[i] <- mean(y[, i], na.rm = removeNA)
+        }
+        means
+}
+```
+
+- Functions are treated like first class objects
+  - You can pass functions as arguments to other functions
+  - Functions can be nested (functions inside of functions)
+- The return value is the last expression to be evaluated  
+
+#### Arguments
+
+```{r}
+f <- function(<arguments>) {
+        #Do something interesting
+}
+```
+
+- Formal arguments are included in the function def.
+- `formals` function returns a list of all the formal arguments of a function.
+- Not every function call in R makes use of all the formal arguments.
+- Function arguments can be missing or might have default values
+- Arguments can be matched positionally or by name.
+  - Different positions is not recommended as it can lead to confusion.
+  - When an argument is matched by name, it is *taken out* of the argument list.
+  - The remaning arguments are matched in the function order.
+  - Partial name matching also works.
+  
+```{r}
+args(lm)
+function (formula, data, subset, weights, na.action,
+          method = "qr", model = TRUE, x = FALSE, 
+          y = FALSE, qr = TRUE, singular.ok = TRUE,
+          contrasts = NULL, offset, ...)
+```
+The following two calls are equivalent:
+```{r}
+lm(data = mydata, y - x, model = FALSE, 1:100)
+lm(y - x, mydata, 1:100, model = FALSE)
+```
+
+#### Defining a Function
+
+##### Lazy Evaluation  
+
+```{r}
+f <- function(a, b) {
+    a^2
+}
+f(2)
+```
+- Argument `b` is useless, so calling `f(2)` will not produce an error  
+```{r}
+f <- function(a, b) {
+    print(a)
+    print(b)
+}
+f(45)
+
+## [1] 45
+
+## Error: argument "b" is missing, with no default
+```
+- Error occurs after printing `a`.  
+  
+##### ... Argument
+
+- Used to indicate a variable number of the arguments.
+- Some generic functions use this so that extra arguments to be passed in.
+- Useful when extending a function.
+
+```{r}
+myplot <- function(x, y, type = "l", ...) {
+        plot(x, y, type = type, ...)
+}
+```
+
+- Sometimes a function takes an unknown number of arguments as input.
+
+```{r}
+args(paste)
+function (..., sep = " ", collapse = NULL)
+  
+args(cat)
+function (..., file = "", sep = " ", fill = FALSE, labels = NULL, append = FALSE)
+```
+
+- Any arguments that appear after ... must be named explicitely and cannot be partially matched.
+
+```{r}
+args(paste)
+function (..., sep = " ", collapse = NULL)
+  
+paste("a", "b", sep = ":")
+[1] "a:b"
+
+paste("a", "b", se = ":")
+[1] "a b :"
+```
+
+### Binding Values to Symbols
+
+- Conflicting definitions:
+
+```{r}
+lm <- function(x) { x * x }
+```
+
+- How does R know what value to assign lm (It is already defined in the *stats* package)?
+- R searches through a series of `environments` to find the appropriate value.
+1. Search the global environment
+2. Search the namespaces of each package on the search list
+- The search priority can be found using the `search` function, and this priority changes based on when you load the packages.
+- The global environment (user's workspace) is always the first element of the search list and the base package is always last.
+- When a user loads a package with `library` the namespace of that package gets put in position 2.
+- Note that R has separate namespaces for functions and non-functions (ie. you can have a function `c` and a variable `c`).
+
+### Scoping Rules
+
+- Main feature that separates R from S
+- They determine how a value is associated with a free variable in a function
+- R uses *lexical Scoping* or *static scoping*. A common alternative is *dynamic scoping*
+- Related to the scoping rules is how R uses the search *list* to bind a value to a symbol.
+- Lexical scoping turns out to be particularly useful for simplifying statistical computations
+
+#### Lexical Scoping
+
+```{r}
+f <- function(x, y) {
+        x^2 + y / z
+}
+```
+- Here `z` is called a *free variable*
+- Scoping rules determine how values are assigned to free variables
+- Free variables are not formal arguments and ar not local variables (from within the function body).
+
+*The values of free variables are searched for in the environment in which the function was defined.*
+  
+What is an environment?
+  
+- A collection of (symbol, value) pairs, i.e. x is a symbol and 3.14 might be its value. (Everything in R is a symbol and a value)
+- Every environment has a parent environment; it is possible for an environment to have multiple "children"
+- The only environment without a parent is the empty environment
+- A function + an environment = a closure or function closure.
+  - Key to a lot of interesting operations in R
+  
+Searching for the value of a free variable:
+  
+- If the value of a symbol is not found in the environment in which a function was defined, then the search is continued in the parent environment.
+- The search continues down the sequence of parent environments until we hit the top-level environment; this is usually the global environment (workspace) or the namespace of a package.
+- After the top-level environment, the search continues down the search list until we hit the empty environment. If a value for a given symbol cannot be found once the empty environment is arrived at, then an error is thrown.
+  
+Why does this even matter?
+  
+- Typically, a function is defined in the global environment, so that the values of free variables are just found in the user's workspace. 
+  - This behavior is logical for most people and is usually the "right thing" to do
+- However, in R you can have functions defined *inside other functions* 
+  - A function can return another function
+  - Languages like C don't let you do this
+- Now things get interesting -- In this case the environment in which a function is defined is the body of another function!
+
+```{r}
+make.power <- function(n) {
+        pow <- function(x) {
+                x^n
+        }
+        pow
+}
+```
+- This function returns another function as its value.
+```{r}
+cube <- make.power(3) #Returns pow <- function(x) {x^3}
+square <- make.power(2) #Returns pow <- function(x) {x^2}
+#These lines define the variable n and become a new function that can define x
+
+cube(3)
+[1] 27
+
+square(3)
+[1] 9
+```
+
+```{r}
+ls(environment(cube))
+[1] "n" "pow"
+get("n", environment(cube))
+[1] 3
+
+ls(environment(square))
+[1] "n" "pow"
+get("n", environment(square))
+[1] 2
+```
+
+```{r}
+y <- 10
+f <- function(x) {
+        y <- 2
+        y^2 + g(x)
+}
+
+g <- function(x) {
+        x*y
+}
+
+f(3)
+#What is this output supposed to be?
+
+```
+  
+#### Lexical vs. Dynamic Scoping
+
+Lexical Scoping:  
+
+- The value of `y` in the function `g` is looked up in the environment in which the function was defined.
+  - In this case, the global environment. 
+  - `y = 10`
+  
+Dynamic Scoping:  
+
+- The value of `y` is looked up in the environment from which the function was called 
+  - Referred to as the calling environment.
+  - In R the calling environment is known as the parent frame
+  - `y = 2`
+  
+```{r}
+g <- function(x) {
+  a <- 3
+  x+a+y
+}
+
+g(2)
+Error in g(2) : object "y" not found
+
+y <- 3
+g(2)
+[1] 8
+```
+  
+- The function is defined in the global environment and is subsequently called from the global environment.
+- The defining environment and the calling environment are the same.
+- Sometimes gives the appearance of dynamic scoping.
+  
+#### Other Languages
+- Scheme
+- Perl
+- Python
+- Common Lisp
+  
+#### Consequences of Lexical Scoping
+
+- In R all objects must be stored in memory.
+  - A challenge with large datasets.
+- All functions must carry a pointer to their respective defining environments, which could be anywhere.
+- In S-PLUS, free variables are always looked up in the global workspace, so everything can be stored on the disk because the "defining environment" of all functions is the same.  
+
+#### Application: Optimization
+
+- Optimization routines in R like `optim`, `nlm`, and `optimize` require you to pass a function whose argument is a vector of parameters (e.g. a log-likelihood)
+- However, an object function might depend on a host of other things besides its parameters (like data)
+- When writing software which does optimization, it may be desirable to allow the user to hold certain parameters fixed.
+  
+Constructor function:
+```{r}
+make. NegLogLik <- function(data, fixed=c(FALSE,FALSE)) {
+        params <- fixed
+        function(p) {
+                params[!fixed] <- p
+                mu <- params[1]
+                sigma <- params[2]
+                a <- -0.5*lengthy(dat)*log(2*pi*sigma^2)
+                b <- 0.5*sum((data-mu)^2) / (sigma^2)
+                -(a + b)
+        }
+}
+```
+  
+Maximizingn a Normal Likelihood:
+```{r}
+set.seed(1); normals <- rnorm(100, 1, 2)
+nLL <- make.NegLogLik(normals)
+nLL
+function(p) {
+        params[!fixed] <- p
+        mu <- params[1]
+        sigma <- params[2]
+        a <- -0.5*length(data)*log(2*pi*sigma^2)
+        b <- -0.5*sum((data-mu)^2) / (sigma^2)
+        -(a + b)
+}
+<environment: 0x165b1a4> 
+#Enclosing environment for this function.
+# This would not be present if you were defining in the global environment.  
+ls(environment(nLL))
+[1] "data"  "fixed" "params"
+```
+  
+Estimating Parameters:
+```{r}
+optim(c(mu = 0, sigma = 1), nLL)$par
+      mu    sigma
+  1.218239  1.787343
+```
+  
+Fixing sigma = 2
+```{r}
+nLL <- make.NegLogLik(normals, c(FALSE, 2))
+optimize(nLL, c(-1, 3))$minimum
+[1] 1.800596
+```
+  
+Fixing mu = 1
+```{r}
+nLL <- make.NegLogLik(normals, c(1, FALSE))
+optimize(nLL, c(1e-6, 10))$minimum
+[1] 1.800596
+```
+  
+Plotting the Likelihood:
+```{r}
+nLL <- make.NegLogLik(normals, c(1, FALSE))
+x <- seq(1.7, 1.9, len = 100)
+y <- sapply(x, nLL)
+plot(x, exp(-(y - min(y))), type = "l")
+
+nLL <- make.NegLogLik(normals, c(FALSE, 2))
+x <- seq (0.5, 1.5, len = 100)
+y <- sapply (x, nLL)
+plot(x, exp(-(y - min(y))), type = "l")
+```
+  
+#### Summary
+- Objective functions can be "built" which contain all of the necessary data for evaluating the function
+- No need to carry around long argument lists -- useful for interactive and exploratory work.
+- Code can be simplified and cleaned up
+  
+### Coding Standards
+
+1. Always write in a text editor and make a text file
+2. Indent your code (4 - 8 spaces)
+3. Limit the width of your code to ~80 columns
+4. Limit length of individual functions
+  - Have separate functions for reading data, analyzing, plotting, etc.
+  - When a bug occurs it'll be easier to find it to fix it.
+  
+### Dates and Times
+
+- Dates are represented by the `Date` class
+  - Stored internally as the number of days since 1970-01-01
+- Times are represented by the `POSIXct` or the `POSIXlt` class
+  - Stored internally as the number of seconds since 1970-01-01
+
+```{r}
+x <- as.Date("1970-01-01")
+x
+## [1] "1970-01-01"
+unclass(x)
+## [1] 0
+## 0 days since 1970-01-01
+unclass(as.Date("1970-01-02"))
+## [1] 1
+```
+  
+- `POSIXct` is just a very large integer under the hood; it uses a useful class when you want to store times in something like a data frame.
+- `POSIXlt` is a list underneath and it stores a bunch of other useful information like the day of the week, day of the year, month, day of the month  
+
+Generic Functions:  
+
+- `weekdays`: give the day of the week
+- `months`: give the month name
+- `quarters`: give the quarter number ("Q1", "Q2", etc.) 
+
+```{r}
+x <- Sys.time()
+x #In POSIXct format
+## [1] "2013=01=24 22:04:14 EST"
+unclass(x)
+## [1] 1349083054
+x$sec
+## Error: $ operator is invalid for atomic vectors
+
+p <- as.POSIXlt(x)
+names(unclass(p))
+## [1] "sec"  "min"  "hour"  "mday"  "mon"
+## [6] "year"  "wday"  "yday"  "isdst"
+p$sec
+## [1] 14.34
+```
+
+```{r}
+datestring <- c("January 10, 2012 10:40", 'December 9, 2011 9:10")
+x <- strptime(datestring, "%B %d, %Y %H:%M")
+x
+[1] "2012-01-10 10:40:00 EST" "2011-12-09 09:10:00 EST"
+
+class(x)
+[1] "POSIXlt" "POSIXt"
+```
+  
+Operations on Dates and Times:
+```{r}
+x <- as.Date9"2012-01-01")
+y <- strptime("9 Jan 2011 11:34:21", "%d %b %Y %H:%M:%S")
+x-y
+## Warning: Incompatible methods ("-.Date", "-.POSIXt") for "-"
+## Error: non-numeric argument to binary operator
+x <- as.POSIXlt(x)
+x-y
+## Time difference of 356.3 days
+```
+- Can also take care of leap years and time zones (tz)  
+
