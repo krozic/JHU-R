@@ -1,7 +1,8 @@
 ---
 title: "Week 3 - Loop Functions and Debugging"
 output:
-  html_notebook
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -115,6 +116,7 @@ $b
 [1] 1 2 3
 
 #This function only exists in lapply to pull the first column of each matrix
+#x becomes inserted for "elt"
 ```
 
 #### sapply
@@ -246,3 +248,391 @@ mapply(rep, 1:4, 4:1)
 [[4]]
 [1] 4
 ```
+
+- Can be used to apply a function to multiple sets of arguments.
+
+```{r}
+noise <- function(n, mean, sd) {
+      rnorm(n, mean, sd)
+}
+noise(5, 1, 2)
+[1] 0.6355566 1.3298849 2.6023788 0.9256519 1.0427784
+
+noise(1:5, 1:5, 2) #doesn't work properly, doesn't allow vector inputs
+[1] 0.9867589 0.4157030 3.0007742 3.7508241 4.7137717
+
+mapply(noise, 1:5, 1:5, 2) #1 var with mean 1, 2 var with mean 2, etc.
+[[1]]
+[1] -0.2412261
+
+[[2]]
+[1]  1.533284 -2.950895
+
+[[3]]
+[1] 4.186533 3.268046 3.771591
+
+[[4]]
+[1] 6.534970 5.228687 1.867848 4.118644
+
+[[5]]
+[1] -0.7377883  4.8755576  3.2978726  3.3713914  0.8926609
+```
+
+#### tapply
+
+- Used to apply afunction over subsets of a vector
+- Split-Apply-Combine methodology
+
+```{r}
+str(tapply)
+function (X, INDEX, FUN = NULL, ..., simplify = TRUE)
+```
+
+- `X` is a vector
+- `INDEX` is a factor or a list of factors (or else they are coerced to factors)
+- `FUN` is a function to be applied
+- `...` contains other arguments to be passed `FUN`
+- `simplify`, should we simplify the result? (like sapply)
+
+```{r}
+x <- c(rnorm(10), runif(10), rnorm(10, 1)) 
+#10 normals, 10 uniforms, 10 normals with mean = 1
+f <- gl(3, 10) #A factor variable
+
+f
+ [1] 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3 3 3 3 3 3 3 3
+Levels: 1 2 3
+
+tapply(x, f, mean) #Allows you to take the mean of each group of numbers in 'x'
+          1           2           3 
+-0.02428736  0.50305875  0.81895348 
+          
+tapply(x, f, mean, simplify = FALSE) #No simplify gives a list
+$`1`
+[1] -0.02428736
+
+$`2`
+[1] 0.5030588
+
+$`3`
+[1] 0.8189535
+
+tapply(x, f, range)
+$`1`
+[1] -2.281810  2.136192
+
+$`2`
+[1] 0.02626713 0.99108003
+
+$`3`
+[1] -1.494296  2.228803
+```
+
+```{r}
+tapply(flags$animate, flags$landmass, mean)
+#Splits the animate column into groups based on landmass then calculates the mean for each group.
+```
+
+#### split
+
+- Takes a vector or other objects and splits it into groups determined by a factor or list of factors.
+
+```{r}
+str(split)
+function (x, f, drop = FALSE, ...)
+```
+
+- `x` is a vector (or list) or data frame
+- `f` is a factor (or coerced to one) or a list of factors
+- `drop` indicates whether empty factors levels should be dropped
+
+```{r}
+x <- c(rnorm(10), runif(10), rnorm(10, 1))
+f <- gl(3, 10)
+split(x, f)
+$`1`
+ [1] -0.63781689 -0.05339353 -1.06600999 -0.14100772  2.46366537
+ [6] -0.85588173 -0.63717026  0.88631349 -0.47038351  0.49418802
+
+$`2`
+ [1] 0.5994623 0.3907709 0.2096855 0.3136003 0.9593178 0.2082625
+ [7] 0.3876043 0.8196400 0.4331901 0.4623739
+
+$`3`
+ [1]  1.3042264  0.8355857 -0.6364617  0.7400829  1.7588725  1.0186106
+ [7]  1.9998755  1.0091212  1.5489539  1.4735341
+```
+
+```{r}
+lapply(split(x, f), mean)
+$`1`
+[1] -0.001749676
+
+$`2`
+[1] 0.4783908
+
+$`3`
+[1] 1.10524
+```
+
+- It's common to use `split` with the `lapply` function
+- In this case the `tapply` function can do the exact same thing.
+- Always returns a list back (This list contains 3 elements)
+
+```{r}
+library(datasets)
+head(airquality)
+  Ozone Solar.R Wind Temp Month Day
+1    41     190  7.4   67     5   1
+2    36     118  8.0   72     5   2
+3    12     149 12.6   74     5   3
+4    18     313 11.5   62     5   4
+5    NA      NA 14.3   56     5   5
+6    28      NA 14.9   66     5   6
+```
+
+```{r}
+s <- split(airquality, airquality$Month)
+lapply(s, function(x) colMeans(x[, c("Ozone", "Solar.R", "Wind")]))
+$`5`
+   Ozone  Solar.R     Wind 
+      NA       NA 11.62258 
+
+$`6`
+    Ozone   Solar.R      Wind 
+       NA 190.16667  10.26667 
+
+$`7`
+     Ozone    Solar.R       Wind 
+        NA 216.483871   8.941935 
+
+$`8`
+   Ozone  Solar.R     Wind 
+      NA       NA 8.793548 
+
+$`9`
+   Ozone  Solar.R     Wind 
+      NA 167.4333  10.1800 
+```
+
+- Here the factor used to split the data is the "Month" variable and returns a list
+
+```{r}
+sapply(s, function(x) colMeans(x[, c("Ozone", "Solar.R", "Wind")]))
+               5         6          7        8        9
+Ozone         NA        NA         NA       NA       NA
+Solar.R       NA 190.16667 216.483871       NA 167.4333
+Wind    11.62258  10.26667   8.941935 8.793548  10.1800
+
+sapply(s, function(x) colMeans(x[, c("Ozone", "Solar.R", "Wind")], na.rm = TRUE))
+                5         6          7          8         9
+Ozone    23.61538  29.44444  59.115385  59.961538  31.44828
+Solar.R 181.29630 190.16667 216.483871 171.857143 167.43333
+Wind     11.62258  10.26667   8.941935   8.793548  10.18000
+```
+
+- `sapply` simplifies the result into a matrix since each element of the list is the same length.
+
+#### Splitting on More than One Level
+
+```{r}
+x <- rnorm(10)
+f1 <- gl(2, 5)
+f2 <- gl(5, 2)
+
+f1
+ [1] 1 1 1 1 1 2 2 2 2 2
+Levels: 1 2
+
+f2
+ [1] 1 1 2 2 3 3 4 4 5 5
+Levels: 1 2 3 4 5
+
+interaction(f1, f2)
+ [1] 1.1 1.1 1.2 1.2 1.3 2.3 2.4 2.4 2.5 2.5
+Levels: 1.1 2.1 1.2 2.2 1.3 2.3 1.4 2.4 1.5 2.5
+```
+
+- The interaction function combines all the levels of the first factor with all the levels of the second factor. 2 x 5 = 10
+
+```{r}
+str(split(x, list(f1, f2)))
+List of 10
+ $ 1.1: num [1:2] 0.911 -1.551
+ $ 2.1: num(0) 
+ $ 1.2: num [1:2] 1.193 0.379
+ $ 2.2: num(0) 
+ $ 1.3: num 1.2
+ $ 2.3: num -0.162
+ $ 1.4: num(0) 
+ $ 2.4: num [1:2] 0.513 -2.542
+ $ 1.5: num(0) 
+ $ 2.5: num [1:2] -0.754 0.782
+
+str(split(x, list(f1, f2), drop = TRUE))
+List of 6
+ $ 1.1: num [1:2] 0.911 -1.551
+ $ 1.2: num [1:2] 1.193 0.379
+ $ 1.3: num 1.2
+ $ 2.3: num -0.162
+ $ 2.4: num [1:2] 0.513 -2.542
+ $ 2.5: num [1:2] -0.754 0.782
+```
+
+- the `drop` argument drops the factors that result in empty levels.
+
+### Debugging
+  
+Indications that somemthing's not right:
+  
+- `message:` A generic notification/diagnostic message produced by the `message` function 
+  - Execution of the function continues
+- `warning:` An indication that something is wrong but not necessarily fatal 
+  - Execution of the function continues; generated by the `warning` function
+- `error:` An indication that a fatal problem has occured
+  - Execution stops
+  - Produced by the `stop` function
+- `condition:` A generic concept for indicating that something unexpected can occur
+  - Programmers can create their own conditions
+  
+```{r}
+log(-1)
+[1] NaN
+Warning message:
+  In log(-1) : NaNs produced
+```
+
+```{r}
+printmessage <- function(x) {
+        if(x > 0)
+                print("x is greather than zero")
+        else
+                print("x is less than or equal to zero")
+        invisible(x) #prevents auto-printing
+}
+
+printmessage(1)
+[1] "x is greather than zero"
+
+#Fix this error
+
+printmessage(NA)
+Error in if (x > 0) { : missing value where TRUE/FALSE needed}
+
+printmessage2 <- function(x) {
+        if(is.na(x))
+                print("x is a missing value!")
+        else if(x > 0)
+                print("x is greather than zero")
+        else
+                print("x is less than or equal to zero")
+        invisible(x) #prevents auto-printing
+}
+
+x <- log(-1)
+Warning message:
+  In log(-1) : NaNs produced
+
+printmessage2(x)
+[1] "x is a missing value!"
+```
+
+Questions to ask:
+  
+- What was your input? How di dyou call the function?
+- What were you expecting? Output, messages, other results?
+- What did you get?
+- How does what you get differ from what you were expecting?
+- Were your expectations correct in the first place?
+- Can you reproduce the problem (exactly)?
+  - In random number generation always set the "seed"
+  - Networking programming or parallel functions may be unreproducible
+  - Problems with getting data over the internet may be hard to reproduce
+  
+#### Debugging Tools
+
+- `traceback:` prints out the function call stack after an error occurs
+  - does nothing if there's no error
+- `debug:` flags a function for "debug" mode which allows you to step through exectution of a function one line at a time
+- `browser:` suspends the execution of a function wherever it is called and puts the function in debut mode
+- `trace:` allows you to insert debugging code into a function at specific places
+- `recover:` allows you to modify the error behaviour so that you can browse the function call stack
+  
+These are interactive tools to help you pick through a function.
+  
+Alternatively you can insert print/cat statements in the function.
+
+#### traceback
+
+```{r}
+mean(x)
+Error in mean(x) : object 'x' not found
+
+traceback()
+1: mean(x)
+```
+  
+- Must call `traceback` immediately after the error occurs. Only gives you the most recent error.
+
+```{r}
+lm(y - x)
+Error in eval(expr, envir, enclos) : object 'y' not found
+
+traceback()
+4: stats::model.frame(formula = y - x, drop.unused.levels = TRUE)
+3: eval(mf, parent.frame())
+2: eval(mf, parent.frame())
+1: lm(y - x)
+```
+
+#### debug
+
+```{r}
+debug(lm)
+lm(y - x)
+
+#Here it will print out the whole function body code
+#Then you'll be in the browser
+
+Browse[2]>
+
+#Just like your R workspace (a workspace embedded in a workspace)
+#The environment within this workspace is your function environment
+
+Browse[2]> n
+
+#This goes to the next line.
+#Keep doing this until you get to the line where the error occurs
+#You can also debug functions within the function by calling them
+
+undebug(lm)
+```
+
+#### recover
+
+```{r}
+options(error = recover)
+
+read.csv("nosuchfile")
+Error in file(file, "rt") : cannot open the connection
+In addition: Warning message:
+In file(file, "rt") :
+  cannot open file 'nosuchfile': No such file or directory
+
+Enter a frame number, or 0 to exit   
+
+1: read.csv("nosuchfile")
+2: read.table(file = file, header = header, sep = sep, quote = quote,
+3: file(file, "rt")
+
+Selection:
+```
+
+#### Summary
+
+- There are three main indications of a problem/condition:
+  - `message`, `warning`, `error`
+  - only an `error` is fatal
+- When analyzing a function with a problem, make sure you can reproduce the problem, clearly state your expectations and how the output differs from your expectation
+- Interactive debugging tools `traceback`, `debug`, `browser`, and `recover` can be used to find problematic code in functions
+- Debugging tools are not a substitute for thinking!

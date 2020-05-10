@@ -1,0 +1,34 @@
+---
+title: "Useful Functions"
+output: html_notebook
+---
+
+Getting data
+list.files()
+
+Manipulating data
+sapply() + unique() + length() = how many unique elements per variable
+
+Analyzing Data Structure
+table()
+dim()
+head()
+str()
+summary()
+
+length()
+sum()
+mean()
+
+Looking at Data
+
+class()
+dim()
+nrow()
+ncol()
+object.size() <- memory space
+names() <- of columns
+head()
+tail()
+summary()
+table() <- analyze individual columns and factors
